@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GED Social Studies Jeopardy Elite</title>
+
+<style>
+body{
+margin:0;
+font-family: 'Segoe UI', sans-serif;
+background: radial-gradient(circle at top,#1f2d3d,#0b132b);
+color:white;
+overflow-x:hidden;
+}
+
+h1{
+text-align:center;
+margin:20px 0 5px 0;
+font-size:36px;
+letter-spacing:1px;
+}
+
+#host{
+text-align:center;
+font-size:18px;
+margin-bottom:10px;
+color:#f39c12;
+min-height:28px;
+}
+
+#topBar{
+display:flex;
+justify-content:center;
+gap:40px;
+font-size:18px;
+margin-bottom:10px;
+}
+
+#timer{
+background:#e74c3c;
+padding:6px 14px;
+border-radius:20px;
+font-weight:bold;
+}
+
+#score{
+background:#16a085;
+padding:6px 14px;
+border-radius:20px;
+font-weight:bold;
+}
+
+#board{
+display:grid;
+grid-template-columns: repeat(6,1fr);
+gap:6px;
+max-width:1400px;
+margin:20px auto;
+padding:10px;
+}
+
+.category{
+background:#111c44;
+padding:14px;
+font-weight:bold;
+text-align:center;
+font-size:14px;
+}
+
+.tile{
+background:#0057b7;
+padding:28px 5px;
+text-align:center;
+cursor:pointer;
+font-size:22px;
+border-radius:6px;
+transition:.2s;
+}
+
+.tile:hover{
+transform:scale(1.05);
+background:#0080ff;
+}
+
+.used{
+background:#222 !important;
+cursor:default;
+}
+
+#modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.95);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+#modalContent{
+background:white;
+color:#1f2d3d;
+width:90%;
+max-width:900px;
+padding:30px;
+border-radius:10px;
+}
+
+.choice{
+background:#e8f1ff;
+padding:12px;
+margin:8px 0;
+border-radius:6px;
+cursor:pointer;
+}
+
+.choice:hover{
+background:#cce0ff;
+}
+
+.correct{background:#c8f7c5 !important;}
+.incorrect{background:#ffcccc !important;}
+
+button{
+margin-top:12px;
+padding:8px 18px;
+border:none;
+background:#0b132b;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌎 Social Studies Jeopardy </h1>
+
+<div id="host">Welcome challengers. Civics is half the test. Choose wisely.</div>
+
+<div id="topBar">
+<div id="score">Score: $0</div>
+<div id="timer">Time: 20</div>
+</div>
+
+<div id="board"></div>
+
+<div id="modal">
+<div id="modalContent">
+<h2 id="questionTitle"></h2>
+<p id="questionText"></p>
+<div id="choices"></div>
+<button onclick="closeModal()">Back to Board</button>
+</div>
+</div>
+
+<script>
+
+let score=0;
+let timer=20;
+let timerInterval;
+
+const hostLines=[
+"Remember: The answer is in the source.",
+"Civics makes up 50% of the exam.",
+"Eliminate extreme answers.",
+"Founding documents appear almost every test.",
+"Read the legend before the map."
+];
+
+function speakHost(text){
+document.getElementById("host").innerText=text;
+}
+
+const categories=[
+"Civics & Government",
+"U.S. History",
+"Economics",
+"Geography & World",
+"Founding Documents",
+"Strategy"
+];
+
+const dollar=[100,200,300,400,500];
+
+const questions=[];
+
+function addQuestion(cat,points,q,a,correct){
+questions.push({cat,points,q,a,correct});
+}
+
+/* SAMPLE QUESTIONS (Add more later) */
+
+addQuestion(0,100,"Which branch makes laws?",
+["Judicial","Executive","Legislative","State"],2);
+
+addQuestion(4,100,"'We the People' appears in?",
+["Declaration","Preamble","Bill of Rights","Gettysburg"],1);
+
+addQuestion(2,200,"If demand increases and supply stays same, price?",
+["Falls","Rises","Freezes","Disappears"],1);
+
+addQuestion(1,300,"New Deal was response to?",
+["WWI","Depression","Civil War","Cold War"],1);
+
+addQuestion(3,400,"Push factor example?",
+["War","High wages","Peace","Jobs"],0);
+
+addQuestion(5,500,"Extreme words like 'always' usually?",
+["Correct","Wrong","Neutral","Required"],1);
+
+function buildBoard(){
+let board=document.getElementById("board");
+
+categories.forEach(cat=>{
+let div=document.createElement("div");
+div.className="category";
+div.innerText=cat;
+board.appendChild(div);
+});
+
+dollar.forEach(points=>{
+categories.forEach((cat,i)=>{
+let tile=document.createElement("div");
+tile.className="tile";
+tile.innerText="$"+points;
+
+tile.onclick=function(){
+if(tile.classList.contains("used")) return;
+let q=questions.find(x=>x.cat===i && x.points===points);
+if(!q) return;
+
+tile.classList.add("used");
+openQuestion(q);
+};
+
+board.appendChild(tile);
+});
+});
+}
+
+function openQuestion(q){
+document.getElementById("modal").style.display="flex";
+document.getElementById("questionTitle").innerText=q.q;
+
+let choicesDiv=document.getElementById("choices");
+choicesDiv.innerHTML="";
+
+startTimer();
+
+q.a.forEach((choice,index)=>{
+let div=document.createElement("div");
+div.className="choice";
+div.innerText=choice;
+
+div.onclick=function(){
+clearInterval(timerInterval);
+
+if(index===q.correct){
+div.classList.add("correct");
+score+=q.points;
+speakHost("Correct. Strong civic reasoning.");
+}else{
+div.classList.add("incorrect");
+score-=q.points;
+speakHost("Review the concept. Stay sharp.");
+}
+
+document.getElementById("score").innerText="Score: $"+score;
+};
+
+choicesDiv.appendChild(div);
+});
+}
+
+function startTimer(){
+timer=20;
+document.getElementById("timer").innerText="Time: "+timer;
+
+timerInterval=setInterval(()=>{
+timer--;
+document.getElementById("timer").innerText="Time: "+timer;
+
+if(timer<=0){
+clearInterval(timerInterval);
+speakHost("Time's up. Move with confidence.");
+closeModal();
+}
+},1000);
+}
+
+function closeModal(){
+clearInterval(timerInterval);
+document.getElementById("modal").style.display="none";
+speakHost(hostLines[Math.floor(Math.random()*hostLines.length)]);
+}
+
+buildBoard();
+
+</script>
+
+</body>
+</html>
