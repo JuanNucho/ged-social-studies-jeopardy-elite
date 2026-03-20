@@ -74,7 +74,7 @@ background:#222 !important;
 cursor:default;
 }
 
-/* DAILY DOUBLE FULLSCREEN */
+/* DAILY DOUBLE */
 #dailyOverlay{
 position:fixed;
 top:0;
@@ -99,13 +99,12 @@ animation:pulse 0.5s infinite alternate;
 font-size:80px;
 color:gold;
 margin:0;
-animation:spin 1s linear infinite;
+animation:scaleUp 1s infinite alternate;
 }
 
-@keyframes spin{
+@keyframes scaleUp{
 0%{transform:scale(1);}
-50%{transform:scale(1.2);}
-100%{transform:scale(1);}
+100%{transform:scale(1.2);}
 }
 
 #modal{
@@ -197,14 +196,32 @@ const categories=[
 
 const values=[100,200,300,400,500];
 
-const questionBank=[
+const questionBank={
+"Civics & Government":[
 {q:"Which branch makes laws?",a:["Judicial","Executive","Legislative","State"],c:2},
+{q:"Checks and balances prevent?",a:["Democracy","Power abuse","Voting","Taxes"],c:1}
+],
+"U.S. History":[
 {q:"The New Deal responded to?",a:["WWI","Great Depression","Cold War","Civil War"],c:1},
-{q:"If demand rises and supply stays same?",a:["Price falls","Price rises","Stays same","None"],c:1},
+{q:"Reconstruction followed?",a:["WWI","Civil War","Cold War","Revolution"],c:1}
+],
+"Economics":[
+{q:"If demand rises and supply stays same?",a:["Price falls","Price rises","Same","None"],c:1},
+{q:"Inflation means?",a:["Falling prices","Rising prices","No change","Recession"],c:1}
+],
+"Geography & World":[
 {q:"Push factor example?",a:["War","Peace","Jobs","Growth"],c:0},
+{q:"Latitude measures?",a:["East/West","North/South","Elevation","Climate"],c:1}
+],
+"Founding Documents":[
 {q:"'We the People' is from?",a:["Declaration","Preamble","Gettysburg","Amendment 1"],c:1},
-{q:"Extreme answer choices are usually?",a:["Correct","Wrong","Neutral","Required"],c:1}
-];
+{q:"First Amendment protects?",a:["Speech","Taxes","Army","Voting age"],c:0}
+],
+"Strategy":[
+{q:"Most answers come from?",a:["Memory","Source","Guessing","Outside knowledge"],c:1},
+{q:"Extreme answers are usually?",a:["Correct","Wrong","Neutral","Required"],c:1}
+]
+};
 
 let dailyIndex=Math.floor(Math.random()*30);
 
@@ -221,7 +238,7 @@ board.appendChild(div);
 });
 
 values.forEach(v=>{
-categories.forEach((cat,i)=>{
+categories.forEach((cat)=>{
 let tile=document.createElement("div");
 tile.className="tile";
 tile.innerText="$"+v;
@@ -230,13 +247,12 @@ let currentIndex=tileCount;
 
 tile.onclick=function(){
 if(tile.classList.contains("used")) return;
-
 tile.classList.add("used");
 
 if(currentIndex===dailyIndex){
-triggerDaily(v);
+triggerDaily(v,cat);
 }else{
-openQuestion(v,false);
+openQuestion(v,false,cat);
 }
 };
 
@@ -246,20 +262,21 @@ tileCount++;
 });
 }
 
-function triggerDaily(value){
+function triggerDaily(value,cat){
 const overlay=document.getElementById("dailyOverlay");
 overlay.style.display="flex";
 
 setTimeout(()=>{
 overlay.style.display="none";
-openQuestion(value,true);
+openQuestion(value,true,cat);
 },2500);
 }
 
-function openQuestion(value,isDaily){
+function openQuestion(value,isDaily,cat){
 resetTimer();
 
-const randomQ=questionBank[Math.floor(Math.random()*questionBank.length)];
+const pool=questionBank[cat];
+const randomQ=pool[Math.floor(Math.random()*pool.length)];
 
 document.getElementById("modal").style.display="flex";
 document.getElementById("questionTitle").innerText=randomQ.q;
