@@ -2,27 +2,24 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>GED Social Studies Jeopardy Elite 3.0</title>
+<title>GED Social Studies Jeopardy Elite</title>
 
 <style>
 body{
 margin:0;
 font-family:'Segoe UI',sans-serif;
-background:radial-gradient(circle at top,#16213e,#0f3460);
+background:radial-gradient(circle at top,#1a2a4f,#0f1e3a);
 color:white;
 overflow-x:hidden;
 }
 
-h1{
-text-align:center;
-margin:20px 0 5px 0;
-}
+h1{text-align:center;margin-top:20px;}
 
 #host{
 text-align:center;
 color:#f39c12;
 margin-bottom:10px;
-min-height:24px;
+font-weight:bold;
 }
 
 #topBar{
@@ -45,13 +42,13 @@ font-weight:bold;
 display:grid;
 grid-template-columns:repeat(6,1fr);
 gap:6px;
-max-width:1300px;
+max-width:1200px;
 margin:20px auto;
 padding:10px;
 }
 
 .category{
-background:#111c44;
+background:#101c44;
 padding:14px;
 font-weight:bold;
 text-align:center;
@@ -68,8 +65,8 @@ text-align:center;
 }
 
 .tile:hover{
-transform:scale(1.05);
-background:#0080ff;
+transform:scale(1.08);
+background:#0090ff;
 }
 
 .used{
@@ -77,31 +74,38 @@ background:#222 !important;
 cursor:default;
 }
 
-/* DAILY DOUBLE ANIMATION */
+/* DAILY DOUBLE FULLSCREEN */
 #dailyOverlay{
 position:fixed;
 top:0;
 left:0;
 width:100%;
 height:100%;
-background:gold;
+background:black;
 display:none;
 justify-content:center;
 align-items:center;
 flex-direction:column;
-z-index:2000;
-animation:flash 1s infinite alternate;
+z-index:3000;
+animation:pulse 0.5s infinite alternate;
 }
 
-@keyframes flash{
-0%{background:gold;}
-100%{background:orange;}
+@keyframes pulse{
+0%{background:black;}
+100%{background:#8b0000;}
 }
 
 #dailyOverlay h1{
-font-size:60px;
-color:black;
+font-size:80px;
+color:gold;
 margin:0;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:scale(1);}
+50%{transform:scale(1.2);}
+100%{transform:scale(1);}
 }
 
 #modal{
@@ -114,6 +118,7 @@ background:rgba(0,0,0,.95);
 display:none;
 justify-content:center;
 align-items:center;
+z-index:2000;
 }
 
 #modalContent{
@@ -153,7 +158,7 @@ cursor:pointer;
 <body>
 
 <h1>🌎 Social Studies Jeopardy</h1>
-<div id="host">Choose any category. Civics is 50% of the exam.</div>
+<div id="host">Choose any tile. Civics is 50% of the exam.</div>
 
 <div id="topBar">
 <div id="score">Score: $0</div>
@@ -164,7 +169,7 @@ cursor:pointer;
 
 <div id="dailyOverlay">
 <h1>🔥 DAILY DOUBLE 🔥</h1>
-<p style="color:black;">Points will be doubled!</p>
+<p style="color:white;">Points will be doubled!</p>
 </div>
 
 <div id="modal">
@@ -180,7 +185,6 @@ cursor:pointer;
 let score=0;
 let timer=10;
 let timerInterval=null;
-let dailyActive=false;
 
 const categories=[
 "Civics & Government",
@@ -195,17 +199,19 @@ const values=[100,200,300,400,500];
 
 const questionBank=[
 {q:"Which branch makes laws?",a:["Judicial","Executive","Legislative","State"],c:2},
-{q:"The New Deal responded to?",a:["WWI","Depression","Cold War","Civil War"],c:1},
-{q:"If demand rises and supply stays same?",a:["Falls","Rises","Same","Disappears"],c:1},
+{q:"The New Deal responded to?",a:["WWI","Great Depression","Cold War","Civil War"],c:1},
+{q:"If demand rises and supply stays same?",a:["Price falls","Price rises","Stays same","None"],c:1},
 {q:"Push factor example?",a:["War","Peace","Jobs","Growth"],c:0},
 {q:"'We the People' is from?",a:["Declaration","Preamble","Gettysburg","Amendment 1"],c:1},
-{q:"Extreme words usually?",a:["Correct","Wrong","Neutral","Required"],c:1}
+{q:"Extreme answer choices are usually?",a:["Correct","Wrong","Neutral","Required"],c:1}
 ];
 
-const dailyTile=Math.floor(Math.random()*30);
+let dailyIndex=Math.floor(Math.random()*30);
 
 function buildBoard(){
-let board=document.getElementById("board");
+const board=document.getElementById("board");
+board.innerHTML="";
+let tileCount=0;
 
 categories.forEach(cat=>{
 let div=document.createElement("div");
@@ -214,20 +220,20 @@ div.innerText=cat;
 board.appendChild(div);
 });
 
-let tileIndex=0;
-
 values.forEach(v=>{
-categories.forEach(()=>{
+categories.forEach((cat,i)=>{
 let tile=document.createElement("div");
 tile.className="tile";
 tile.innerText="$"+v;
+
+let currentIndex=tileCount;
 
 tile.onclick=function(){
 if(tile.classList.contains("used")) return;
 
 tile.classList.add("used");
 
-if(tileIndex===dailyTile){
+if(currentIndex===dailyIndex){
 triggerDaily(v);
 }else{
 openQuestion(v,false);
@@ -235,31 +241,30 @@ openQuestion(v,false);
 };
 
 board.appendChild(tile);
-tileIndex++;
+tileCount++;
 });
 });
 }
 
 function triggerDaily(value){
-dailyActive=true;
-let overlay=document.getElementById("dailyOverlay");
+const overlay=document.getElementById("dailyOverlay");
 overlay.style.display="flex";
 
 setTimeout(()=>{
 overlay.style.display="none";
 openQuestion(value,true);
-},2000);
+},2500);
 }
 
 function openQuestion(value,isDaily){
 resetTimer();
 
-let randomQ=questionBank[Math.floor(Math.random()*questionBank.length)];
+const randomQ=questionBank[Math.floor(Math.random()*questionBank.length)];
 
 document.getElementById("modal").style.display="flex";
 document.getElementById("questionTitle").innerText=randomQ.q;
 
-let choicesDiv=document.getElementById("choices");
+const choicesDiv=document.getElementById("choices");
 choicesDiv.innerHTML="";
 
 randomQ.a.forEach((choice,index)=>{
@@ -273,11 +278,11 @@ clearInterval(timerInterval);
 if(index===randomQ.c){
 div.classList.add("correct");
 score+=isDaily?value*2:value;
-document.getElementById("host").innerText="Correct! Strong reasoning.";
+document.getElementById("host").innerText="Correct!";
 }else{
 div.classList.add("incorrect");
 score-=value;
-document.getElementById("host").innerText="Review the concept and stay sharp.";
+document.getElementById("host").innerText="Review that concept.";
 }
 
 updateScore();
@@ -310,7 +315,7 @@ document.getElementById("score").innerText="Score: $"+score;
 function closeModal(){
 clearInterval(timerInterval);
 document.getElementById("modal").style.display="none";
-document.getElementById("host").innerText="Choose your next category.";
+document.getElementById("host").innerText="Choose your next tile.";
 }
 
 buildBoard();
